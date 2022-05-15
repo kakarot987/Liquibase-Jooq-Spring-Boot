@@ -1,0 +1,26 @@
+ext {
+    // DB
+    liquibaseVersion = '4.4.0'
+    mySqlVersion = '8.0.23'
+    // Keep jOOQ version aligned with Spring Boot
+    jooqVersion = '3.14.8'
+
+    libraries = [
+
+            // Spring dependencies
+            springBootStarterWeb    : "org.springframework.boot:spring-boot-starter-web",
+            springBootActuator      : "org.springframework.boot:spring-boot-starter-actuator",
+            // Database dependencies
+            springBootStarterJdbc   : 'org.springframework.boot:spring-boot-starter-jdbc',
+            liquibase               : "org.liquibase:liquibase-core:${liquibaseVersion}",
+            mysql                   : "mysql:mysql-connector-java:${mySqlVersion}",
+            jooq                    : "org.jooq:jooq:${jooqVersion}",
+
+            //jsp dependencies
+            jstl : "javax.servlet:jstl",
+            jasper : "org.apache.tomcat.embed:tomcat-embed-jasper",
+
+            // Test dependencies
+            springBootStarterTest : "org.springframework.boot:spring-boot-starter-test"
+    ]
+}

@@ -1,0 +1,117 @@
+plugins {
+	id 'org.springframework.boot' version '2.4.4'
+	id 'org.sonarqube' version '3.1.1'
+	id 'jacoco'
+	id 'nu.studer.jooq' version '5.2.1'
+}
+
+apply from: 'libraries.gradle'
+
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'io.spring.dependency-management'
+
+group = 'com.springBoot-liquibase-jooq'
+version = '1.0-SNAPSHOT'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+	mavenLocal()
+	mavenCentral()
+}
+
+ext['jooq.version'] = ext['jooqVersion']
+
+dependencyManagement {
+	imports {
+		mavenBom 'org.springframework.cloud:spring-cloud-dependencies:2020.0.2'
+	}
+}
+
+dependencies {
+
+	// Database driver for jOOQ
+	jooqGenerator(libraries.mysql)
+
+	// Spring dependencies
+	implementation(libraries.springBootStarterWeb)
+	implementation(libraries.springBootActuator)
+
+	// Database dependencies
+	implementation(libraries.springBootStarterJdbc)
+	implementation(libraries.liquibase)
+	implementation(libraries.jooq)
+	runtimeOnly(libraries.mysql)
+
+	//jsp dependencies
+	implementation(libraries.jstl)
+	implementation(libraries.jasper)
+	// Test
+	testImplementation(libraries.springBootStarterTest)
+}
+
+jooq {
+	version = libraries.jooqVersion
+
+	configurations {
+		main {
+			generateSchemaSourceOnCompilation = true
+
+			generationTool {
+				jdbc {
+					driver = 'com.mysql.cj.jdbc.Driver'
+					url = 'jdbc:mysql://127.0.0.1:3306/world'
+					user = 'root'
+					password = 'root1234'
+				}
+
+				generator {
+					name = 'org.jooq.codegen.DefaultGenerator'
+
+					database {
+						name = 'org.jooq.meta.mysql.MySQLDatabase'
+						inputSchema = 'world'
+						outputSchemaToDefault = true
+						excludes = 'DATABASECHANGELOG|DATABASECHANGELOGLOCK'
+						forcedTypes {
+							forcedType {
+								name = "BOOLEAN"
+								types = "(?i:(TINY)?INT(UNSIGNED)?\\(1\\))"
+							}
+						}
+					}
+
+					generate {
+						relations = false
+						deprecated = false
+						records = true
+						pojos = true
+						daos = true
+						springAnnotations = true
+						javaTimeTypes = true
+						fluentSetters = true
+						pojosEqualsAndHashCode = true
+					}
+
+					target {
+						packageName = 'co.db.jooq'
+						directory = 'src/generated-db-entities/java/'
+					}
+				}
+			}
+
+		}
+	}
+
+}
+
+// Treat the generated sources as a separated source set so that people don't get confused in PRs.
+sourceSets {
+	main {
+		java {
+			srcDirs 'src/generated-db-entities/java'
+		}
+	}
+}

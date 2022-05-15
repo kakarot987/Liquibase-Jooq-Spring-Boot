@@ -1,0 +1,20 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd">
+    <changeSet id="0" author="MAYANK">
+        <createTable tableName="Saiyans">
+            <column name="saiyan_id" type="INT">
+                <constraints primaryKey="true" unique="true"/>
+            </column>
+            <column name="saiyan_name" type="varchar(20)">
+                <constraints unique="false" nullable="false"/>
+            </column>
+            <column name="saiyan_gender" type="varchar(20)">
+                <constraints unique="false"/>
+            </column>
+            <column name="saiyan_blood" type="varchar(20)">
+                <constraints unique="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+</databaseChangeLog>
