@@ -7,4 +7,5 @@ http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd
 http://www.liquibase.org/xml/ns/pro http://www.liquibase.org/xml/ns/pro/liquibase-pro-3.8.xsd">
 <include file="classpath:liquibase/changelog/create_table_saiyan.xml" relativeToChangelogFile="false"></include>
     <include file="classpath:liquibase/changelog/insert_into_saiyan_table.xml" relativeToChangelogFile="false"></include>
+    <include file="classpath:liquibase/changelog/add_saiyan_name_index.xml" relativeToChangelogFile="false"></include>
 </databaseChangeLog>

@@ -6,6 +6,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import javax.sql.DataSource;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
+import java.sql.Connection;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -43,6 +47,9 @@ class SpringBootLiquibaseJooqApplicationTests {
     @Autowired
     private MockMvc mvc;
 
+    @Autowired
+    private DataSource dataSource;
+
     @Test
     void migrationsSeedDataAndJooqCanWriteAndRead() {
         assertThat(repository.selectAllSaiyans()).extracting(Saiyans::getSaiyanName)
@@ -50,6 +57,23 @@ class SpringBootLiquibaseJooqApplicationTests {
         repository.addSaiyan(99, "Bardock", "male", "Pure");
         assertThat(repository.selectAllSaiyans()).extracting(Saiyans::getSaiyanName)
                 .contains("Bardock");
+    }
+
+    @Test
+    void schemaEvolutionAddsNameIndex() throws Exception {
+        try (Connection connection = dataSource.getConnection()) {
+            DatabaseMetaData metadata = connection.getMetaData();
+            boolean found = false;
+            try (ResultSet indexes = metadata.getIndexInfo(null, null, "saiyans", false, false)) {
+                while (indexes.next()) {
+                    if ("idx_saiyans_name".equalsIgnoreCase(indexes.getString("INDEX_NAME"))) {
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            assertThat(found).as("Liquibase follow-up migration creates a name index").isTrue();
+        }
     }
 
     @Test

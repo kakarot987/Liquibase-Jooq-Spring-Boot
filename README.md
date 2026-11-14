@@ -32,13 +32,13 @@ POST returns 201 on success, 400 for an invalid id/name and 409 for a duplicate 
 
 ## Regenerate jOOQ sources
 
-**First** start MySQL and run the application once to apply Liquibase migrations. **Then** run:
+Start MySQL using the Compose command above, then run the single generator command below. Gradle automatically runs **Liquibase first**, applying all migrations, and then jOOQ introspects the migrated database:
 
 ```sh
 ./gradlew generateJooq
 ```
 
-The generator reads `DB_URL` (defaults to `jdbc:mysql://127.0.0.1:3306/world`), `DB_USER` and `DB_PASSWORD`. Normal compile uses checked-in generated sources and does not invoke code generation. A database with the expected schema is needed for regeneration.
+The migration and generator share `DB_URL` (defaults to `jdbc:mysql://127.0.0.1:3306/world`), `DB_USER`, and a required `DB_PASSWORD`. Normal compilation uses checked-in generated sources and does not connect to MySQL. The sample forward migration adds an index on `saiyan_name`, leaving the generated POJO shape unchanged. See [architecture](docs/architecture.md) for the migration/codegen flow.
 
 ## Tests and CI
 
@@ -46,6 +46,6 @@ The generator reads `DB_URL` (defaults to `jdbc:mysql://127.0.0.1:3306/world`), 
 ./gradlew test
 ```
 
-Tests start an isolated MySQL 8 Testcontainers database, run Liquibase on Spring context initialization, and verify reads, writes, HTTP methods, validation and duplicate IDs. Docker is required for these integration tests.
+Tests start an isolated MySQL 8 Testcontainers database, run Liquibase on Spring context initialization, and verify reads, writes, HTTP methods, validation, duplicate IDs, and the migration-added index. CI separately validates the migration-first jOOQ generator against a disposable MySQL service. Docker is required for these integration tests.
 
 This is the **preferred maintained jOOQ/Liquibase example**. The older `Spring-Data-Jooq-Liquibase-Mysql` project remains a learning/reference version.
