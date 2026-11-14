@@ -1,36 +1,52 @@
 package com.springBootliquibasejooq.controller;
 
-import co.db.jooq.tables.daos.SaiyansDao;
 import co.db.jooq.tables.pojos.Saiyans;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.springBootliquibasejooq.ModelRepository;
 import com.springBootliquibasejooq.service.ModelService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.jooq.exception.DataAccessException;
+import org.jooq.exception.SQLStateClass;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
-@JsonIgnoreProperties(value = {"handler","hibernateLazyInitializer","fieldHandler"})
 @RestController
 public class ModelController {
 
-    @Autowired
-    ModelService modelService;
+    private final ModelService modelService;
+    private final ModelRepository modelRepository;
 
-    @Autowired
-    ModelRepository modelRepository;
-
-    @RequestMapping("/addModel")
-    public String addModel(@RequestBody Saiyans model){
-        return modelService.addModel(model.getSaiyanId(),model.getSaiyanName(),
-                model.getSaiyanGender(),model.getSaiyanBlood());
+    public ModelController(ModelService modelService, ModelRepository modelRepository) {
+        this.modelService = modelService;
+        this.modelRepository = modelRepository;
     }
 
-    @RequestMapping ("getModels")
-    public List<Saiyans> getModels(){
-        //Optional<ModelRecord> msd = modelRepository.selectFrom();
-    return modelRepository.selectAllSaiyans();
+    @PostMapping("/addModel")
+    public ResponseEntity<Void> addModel(@RequestBody Saiyans model) {
+        if (model.getSaiyanId() == null || model.getSaiyanId() <= 0
+                || model.getSaiyanName() == null || model.getSaiyanName().isBlank()
+                || model.getSaiyanName().length() > 20) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Valid id and name are required");
+        }
+        try {
+            modelService.addModel(model.getSaiyanId(), model.getSaiyanName(),
+                    model.getSaiyanGender(), model.getSaiyanBlood());
+        } catch (DataAccessException e) {
+            if (e.sqlStateClass() == SQLStateClass.C23_INTEGRITY_CONSTRAINT_VIOLATION) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Duplicate or invalid row", e);
+            }
+            throw e;
+        }
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @GetMapping("/getModels")
+    public List<Saiyans> getModels() {
+        return modelRepository.selectAllSaiyans();
     }
 }
