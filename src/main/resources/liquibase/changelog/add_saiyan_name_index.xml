@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+    <!-- A separate, forward-only migration demonstrates evolving an existing table.
+         Using an index avoids modifying the checked-in jOOQ row/POJO contract. -->
+    <changeSet id="2-add-saiyan-name-index" author="maintenance">
+        <createIndex indexName="idx_saiyans_name" tableName="Saiyans">
+            <column name="saiyan_name"/>
+        </createIndex>
+        <rollback>
+            <dropIndex indexName="idx_saiyans_name" tableName="Saiyans"/>
+        </rollback>
+    </changeSet>
+</databaseChangeLog>

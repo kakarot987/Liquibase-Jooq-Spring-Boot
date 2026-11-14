@@ -22,6 +22,9 @@ repositories {
 	mavenCentral()
 }
 
+// Dedicated classpath so Liquibase migrations run before jOOQ introspection.
+configurations { liquibaseCli }
+
 ext['jooq.version'] = ext['jooqVersion']
 
 dependencyManagement {
@@ -34,6 +37,8 @@ dependencies {
 
 	// Database driver for jOOQ
 	jooqGenerator(libraries.mysql)
+	liquibaseCli(libraries.liquibase)
+	liquibaseCli(libraries.mysql)
 
 	// Spring dependencies
 	implementation(libraries.springBootStarterWeb)
@@ -65,7 +70,7 @@ jooq {
 			generationTool {
 				jdbc {
 					driver = 'com.mysql.cj.jdbc.Driver'
-					url = System.getenv('DB_URL') ?: 'jdbc:mysql://127.0.0.1:3306/world'
+					url = System.getenv('DB_URL') ?: 'jdbc:mysql://127.0.0.1:3306/world?useSSL=false&allowPublicKeyRetrieval=true'
 					user = System.getenv('DB_USER') ?: 'app'
 					password = System.getenv('DB_PASSWORD') ?: ''
 				}
@@ -108,6 +113,31 @@ jooq {
 		}
 	}
 
+}
+
+// This task is deliberately opt-in: a normal build uses committed generated sources.
+tasks.register('applyLiquibase', JavaExec) {
+    group = 'database'
+    description = 'Apply the Liquibase changelog to DB_URL before generating jOOQ sources.'
+    classpath = configurations.liquibaseCli + files('src/main/resources')
+    mainClass = 'liquibase.integration.commandline.Main'
+    doFirst {
+        if (!System.getenv('DB_PASSWORD')) {
+            throw new GradleException('DB_PASSWORD must be set to apply Liquibase changes')
+        }
+        args = [
+            '--driver=com.mysql.cj.jdbc.Driver',
+            '--url=' + (System.getenv('DB_URL') ?: 'jdbc:mysql://127.0.0.1:3306/world?useSSL=false&allowPublicKeyRetrieval=true'),
+            '--username=' + (System.getenv('DB_USER') ?: 'app'),
+            '--password=' + System.getenv('DB_PASSWORD'),
+            '--changeLogFile=liquibase/db.changelog-master.xml',
+            'update'
+        ]
+    }
+}
+
+tasks.named('generateJooq') {
+    dependsOn tasks.named('applyLiquibase')
 }
 
 // Treat the generated sources as a separated source set so that people don't get confused in PRs.
