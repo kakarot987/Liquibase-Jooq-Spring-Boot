@@ -14,8 +14,8 @@ apply plugin: 'io.spring.dependency-management'
 group = 'com.springBoot-liquibase-jooq'
 version = '1.0-SNAPSHOT'
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+sourceCompatibility = 11
+targetCompatibility = 11
 
 repositories {
 	mavenLocal()
@@ -50,6 +50,8 @@ dependencies {
 	implementation(libraries.jasper)
 	// Test
 	testImplementation(libraries.springBootStarterTest)
+	testImplementation 'org.testcontainers:junit-jupiter:1.19.8'
+	testImplementation 'org.testcontainers:mysql:1.19.8'
 }
 
 jooq {
@@ -57,14 +59,15 @@ jooq {
 
 	configurations {
 		main {
-			generateSchemaSourceOnCompilation = true
+			// Generated sources are checked in; run generateJooq explicitly after migrations.
+			generateSchemaSourceOnCompilation = false
 
 			generationTool {
 				jdbc {
 					driver = 'com.mysql.cj.jdbc.Driver'
-					url = 'jdbc:mysql://127.0.0.1:3306/world'
-					user = 'root'
-					password = 'root1234'
+					url = System.getenv('DB_URL') ?: 'jdbc:mysql://127.0.0.1:3306/world'
+					user = System.getenv('DB_USER') ?: 'app'
+					password = System.getenv('DB_PASSWORD') ?: ''
 				}
 
 				generator {

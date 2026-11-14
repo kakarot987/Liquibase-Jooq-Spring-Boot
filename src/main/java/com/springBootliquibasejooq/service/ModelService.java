@@ -1,23 +1,19 @@
 package com.springBootliquibasejooq.service;
 
 import com.springBootliquibasejooq.ModelRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
 public class ModelService {
 
-    @Autowired
-    ModelRepository modelRepository;
+    private final ModelRepository modelRepository;
 
-    public String addModel(int id, String name,String gender, String blood){
-        try {
-            modelRepository.addSaiyan(id,name,gender,blood);
-            return "Added Model Info Successfully";
-        }
-        catch (Exception e){
-            System.out.println(e);
-            return "Exception occur";
-        }
+    public ModelService(ModelRepository modelRepository) {
+        this.modelRepository = modelRepository;
+    }
+
+    public void addModel(int id, String name, String gender, String blood) {
+        // Propagate database errors so the controller can return a suitable status.
+        modelRepository.addSaiyan(id, name, gender, blood);
     }
 }

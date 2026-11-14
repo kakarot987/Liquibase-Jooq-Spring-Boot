@@ -1,30 +1,51 @@
-# Spring-Data-Jooq-Liquibase-Mysql
-Example of Implementation of Spring Boot with Liquibase and Jooq:
+# Liquibase + jOOQ + Spring Boot + MySQL
 
-**Spring Boot**:
+An intentionally small Java 11 / Spring Boot 2.4.4 example of **versioned database migrations with Liquibase** and **type-safe SQL with jOOQ**. The generated jOOQ sources are committed, so a normal build does **not** require a running database during compilation.
 
-Spring Boot is an open source Java-based framework used to create micro service. It is used to build stand-alone and production-ready Spring applications.
+## Local MySQL
 
-Features:
+Set development-only credentials in your shell (never commit real passwords):
 
-->Create stand-alone Spring applications
+```sh
+export DB_USER=app
+export DB_PASSWORD='choose-a-local-password'
+export MYSQL_ROOT_PASSWORD='choose-another-local-password'
+docker compose up -d mysql
+```
 
-->Embed Tomcat, Jetty or Undertow directly (no need to deploy WAR files)
+The supplied MySQL 8 setup uses `lower-case-table-names=1` because the original Liquibase changeSets use `Saiyans` while the checked-in jOOQ generator emitted lowercase `saiyans`. Configure this before first creating the volume; changing it on an existing volume is not supported. Use `docker compose down -v` **only if you intend to delete all local database data**.
 
-->Provide opinionated 'starter' dependencies to simplify your build configuration
+## Run the application
 
-->Automatically configure Spring and 3rd party libraries whenever possible
+```sh
+./gradlew bootRun
+```
 
-->Provide production-ready features such as metrics, health checks, and externalized configuration
+Liquibase applies changesets on startup. API examples:
 
-->Absolutely no code generation and no requirement for XML configuration
+```sh
+curl http://localhost:8080/getModels
+curl -i -X POST http://localhost:8080/addModel -H 'Content-Type: application/json' -d '{"saiyanId":42,"saiyanName":"Bardock","saiyanGender":"male","saiyanBlood":"Pure"}'
+```
 
-**Liquibase**:
+POST returns 201 on success, 400 for an invalid id/name and 409 for a duplicate key.
 
-Liquibase provides a great starting point for teams addressing the challenges that come with managing database schema changes.
+## Regenerate jOOQ sources
 
-It has the ability to manage revisions of your database schema scripts. It works across various types of databases and supports various file formats for defining the DB structure. Liquibase has the ability to roll changes back and forward from a specific point - saving you from the need to know what was the last change or script you ran on a specific DB instance.
+**First** start MySQL and run the application once to apply Liquibase migrations. **Then** run:
 
-**JOOQ**:
+```sh
+./gradlew generateJooq
+```
 
-jOOQ is a library that will let you create Java Classes such as POJOs by reading your database and lets you write type-safe SQL queries.
+The generator reads `DB_URL` (defaults to `jdbc:mysql://127.0.0.1:3306/world`), `DB_USER` and `DB_PASSWORD`. Normal compile uses checked-in generated sources and does not invoke code generation. A database with the expected schema is needed for regeneration.
+
+## Tests and CI
+
+```sh
+./gradlew test
+```
+
+Tests start an isolated MySQL 8 Testcontainers database, run Liquibase on Spring context initialization, and verify reads, writes, HTTP methods, validation and duplicate IDs. Docker is required for these integration tests.
+
+This is the **preferred maintained jOOQ/Liquibase example**. The older `Spring-Data-Jooq-Liquibase-Mysql` project remains a learning/reference version.
